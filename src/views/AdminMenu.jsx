@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Layout from '../components/Layout';
-import { getMenu, addMenuItem, updateMenuItem, deleteMenuItem } from '../api/mockMenu';
+import { getMenu, addMenuItem, updateMenuItem, deleteMenuItem, resetMenu } from '../api/mockMenu';
 import {
   Paper, Typography, Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControlLabel, Checkbox,
@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Tooltip from '@mui/material/Tooltip';
 
 export default function AdminMenu() {
   useEffect(() => {
@@ -17,12 +18,14 @@ export default function AdminMenu() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState({});
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
 
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ nombre: '', tipo: 'comida', requierePreparacion: true, precio: 0, disponible: true });
+  const [snack, setSnack] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -54,8 +57,21 @@ export default function AdminMenu() {
     setOpenForm(true);
   };
 
+  const validate = () => {
+    const errs = {};
+    if (!form.nombre.trim()) errs.nombre = 'El nombre es obligatorio';
+    if (form.precio === '' || isNaN(Number(form.precio))) errs.precio = 'El precio es obligatorio';
+    if (Number(form.precio) <= 0) errs.precio = 'El precio debe ser mayor a 0';
+    const normalized = form.nombre.trim().toLowerCase();
+    const dup = items.some(i => i.nombre.trim().toLowerCase() === normalized && (!editing || i.id !== editing.id));
+    if (dup) errs.nombre = 'Ya existe un ítem con ese nombre';
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const saveForm = async () => {
-    if (!form.nombre.trim()) { setError('El nombre es obligatorio'); return; }
+    setError('');
+    if (!validate()) return;
     try {
       if (editing) {
         await updateMenuItem(editing.id, form);
@@ -65,6 +81,7 @@ export default function AdminMenu() {
       setOpenForm(false);
       setEditing(null);
       setForm({ nombre: '', tipo: 'comida', requierePreparacion: true, precio: 0, disponible: true });
+      setFormErrors({});
       loadData();
     } catch (e) {
       setError('No se pudo guardar el ítem');
@@ -94,6 +111,12 @@ export default function AdminMenu() {
           </FormControl>
           <TextField size="small" label="Buscar" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
           <Button variant="contained" onClick={openNew}>Nuevo</Button>
+          <Button variant="outlined" color="warning" onClick={async () => {
+            if (!confirm('¿Seguro que quieres resetear el menú a los valores por defecto?')) return;
+            await resetMenu();
+            setSnack('Menú reseteado');
+            loadData();
+          }}>Resetear menú</Button>
         </Box>
 
         {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
@@ -134,11 +157,19 @@ export default function AdminMenu() {
         )}
       </Paper>
 
+      {snack && (
+        <Box sx={{ position: 'fixed', bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ bgcolor: '#323232', color: '#fff', px: 2, py: 1, borderRadius: 1 }} onAnimationEnd={() => setSnack('')}>
+            {snack}
+          </Box>
+        </Box>
+      )}
+
       <Dialog open={openForm} onClose={() => setOpenForm(false)} fullWidth maxWidth="xs">
         <DialogTitle>{editing ? 'Editar ítem' : 'Nuevo ítem'}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'grid', gap: 2, mt: 1 }}>
-            <TextField label="Nombre" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} autoFocus />
+            <TextField label="Nombre" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} autoFocus error={!!formErrors.nombre} helperText={formErrors.nombre} />
             <FormControl fullWidth>
               <InputLabel id="tipo">Tipo</InputLabel>
               <Select labelId="tipo" label="Tipo" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}>
@@ -148,14 +179,34 @@ export default function AdminMenu() {
                 <MenuItem value="bebida">Bebida</MenuItem>
               </Select>
             </FormControl>
-            <TextField label="Precio" type="number" value={form.precio} onChange={e => setForm(f => ({ ...f, precio: Number(e.target.value) }))} inputProps={{ min: 0 }} />
+            <TextField label="Precio" type="number" value={form.precio} onChange={e => setForm(f => ({ ...f, precio: e.target.value }))} inputProps={{ min: 1 }} error={!!formErrors.precio} helperText={formErrors.precio} />
             <FormControlLabel control={<Checkbox checked={form.requierePreparacion} onChange={e => setForm(f => ({ ...f, requierePreparacion: e.target.checked }))} />} label="Requiere preparación" />
             <FormControlLabel control={<Checkbox checked={form.disponible} onChange={e => setForm(f => ({ ...f, disponible: e.target.checked }))} />} label="Disponible" />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenForm(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={saveForm}>{editing ? 'Guardar' : 'Crear'}</Button>
+          {(() => {
+            const nombreTrim = String(form.nombre || '').trim();
+            const precioNum = Number(form.precio);
+            const isPrecioValid = !Number.isNaN(precioNum) && precioNum > 0;
+            const isNombreValid = nombreTrim.length > 0;
+            const isDup = items.some(i => i.nombre.trim().toLowerCase() === nombreTrim.toLowerCase() && (!editing || i.id !== editing.id));
+            const canSubmit = isPrecioValid && isNombreValid && !isDup;
+            let tooltip = '';
+            if (!isNombreValid) tooltip = 'El nombre es obligatorio';
+            else if (isDup) tooltip = 'Ya existe un ítem con ese nombre';
+            else if (!isPrecioValid) tooltip = 'El precio debe ser mayor a 0';
+            return (
+              <Tooltip title={!canSubmit ? tooltip : ''} arrow>
+                <span>
+                  <Button variant="contained" onClick={saveForm} disabled={!canSubmit}>
+                    {editing ? 'Guardar' : 'Crear'}
+                  </Button>
+                </span>
+              </Tooltip>
+            );
+          })()}
         </DialogActions>
       </Dialog>
     </Layout>

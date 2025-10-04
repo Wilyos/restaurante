@@ -9,7 +9,9 @@ const DEFAULT_MENU = [
   { id: 4, nombre: 'Gaseosa', tipo: 'bebida', requierePreparacion: false, precio: 5000, disponible: true },
   { id: 5, nombre: 'Jugo natural', tipo: 'bebida', requierePreparacion: true, precio: 7000, disponible: true },
   { id: 6, nombre: 'Cerveza', tipo: 'bebida', requierePreparacion: false, precio: 8000, disponible: true },
-  { id: 7, nombre: 'Agua', tipo: 'bebida', requierePreparacion: false, precio: 4000, disponible: true }
+  { id: 7, nombre: 'Agua', tipo: 'bebida', requierePreparacion: false, precio: 4000, disponible: true },
+  { id: 8, nombre: 'Cafe', tipo: 'bebida', requierePreparacion: true, precio: 6000, disponible: true },
+  { id: 9, nombre: 'Empanadas', tipo: 'entrada', requierePreparacion: true, precio: 2500, disponible: true },
 ];
 
 function load() {
@@ -34,7 +36,7 @@ function save(list) {
 }
 
 function nextId() {
-  const current = Number(localStorage.getItem(ID_KEY) || '8');
+  const current = Number(localStorage.getItem(ID_KEY) || String(Math.max(...DEFAULT_MENU.map(i => i.id)) + 1));
   localStorage.setItem(ID_KEY, String(current + 1));
   return current;
 }
@@ -48,7 +50,7 @@ export function addMenuItem(item) {
   const nuevo = {
     id: nextId(),
     nombre: String(item.nombre || '').trim(),
-    tipo: item.tipo || 'comida',
+    tipo: (item.tipo || 'comida').toLowerCase(),
     requierePreparacion: !!item.requierePreparacion,
     precio: Number(item.precio) || 0,
     disponible: item.disponible !== undefined ? !!item.disponible : true,
@@ -62,7 +64,12 @@ export function updateMenuItem(id, updates) {
   const list = load();
   const idx = list.findIndex(i => i.id === id);
   if (idx === -1) return Promise.reject(new Error('Item no encontrado'));
-  const upd = { ...list[idx], ...updates, precio: updates.precio !== undefined ? Number(updates.precio) : list[idx].precio };
+  const upd = {
+    ...list[idx],
+    ...updates,
+    tipo: updates.tipo ? String(updates.tipo).toLowerCase() : list[idx].tipo,
+    precio: updates.precio !== undefined ? Number(updates.precio) : list[idx].precio,
+  };
   list[idx] = upd;
   save(list);
   return Promise.resolve(upd);

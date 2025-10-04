@@ -40,6 +40,43 @@ export default function Caja() {
     cargarPedidos();
   };
 
+  const imprimirTicket = (pedido) => {
+    const total = calcularTotal(pedido);
+    const fecha = new Date().toLocaleString();
+    const lineas = [];
+    if (pedido.items) {
+      pedido.items.forEach(i => lineas.push(`${i.cantidad} x ${i.producto.nombre} - $${(i.producto.precio || 0).toLocaleString()}`));
+    }
+    if (pedido.bebidasSinPreparar) {
+      pedido.bebidasSinPreparar.forEach(b => lineas.push(`${b.cantidad} x ${b.producto.nombre} - $${(b.producto.precio || 0).toLocaleString()}`));
+    }
+    const html = `<!DOCTYPE html><html><head><meta charset='utf-8'/><title>Ticket #${pedido.id}</title>
+    <style>
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 16px; }
+      h1 { font-size: 18px; margin: 0 0 8px; text-align:center; }
+      .meta { font-size: 12px; margin-bottom: 12px; text-align:center; }
+      table { width:100%; border-collapse: collapse; }
+      td { font-size: 13px; padding: 4px 0; }
+      tfoot td { border-top: 1px solid #000; font-weight: bold; padding-top: 8px; }
+      .center { text-align:center; }
+      @media print { button { display:none; } }
+    </style></head><body>
+    <h1>Ticket Pedido #${pedido.id}</h1>
+    <div class='meta'>Mesa: ${pedido.mesa || '-'}<br/>Fecha: ${fecha}</div>
+    <table><tbody>
+    ${lineas.map(l => `<tr><td>${l}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td>Total: $${total.toLocaleString()}</td></tr></tfoot></table>
+    <div class='center'><button onclick='window.print()'>Imprimir</button></div>
+    </body></html>`;
+    const win = window.open('', '_blank', 'width=360,height=600');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      // Optionally auto print after short delay
+      setTimeout(() => { try { win.print(); } catch(_){} }, 300);
+    }
+  };
+
   // Función para calcular el total del pedido
   const calcularTotal = (pedido) => {
     let total = 0;
@@ -105,6 +142,13 @@ export default function Caja() {
                   }
                 />
                 <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => imprimirTicket(p)}
+                  >
+                    Ticket
+                  </Button>
                   <Button
                     variant="contained"
                     color="secondary"

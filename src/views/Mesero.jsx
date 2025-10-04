@@ -11,6 +11,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import PersonIcon from '@mui/icons-material/Person';
 import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
 import Layout from '../components/Layout';
 import { getMenu } from '../api/mockMenu';
 import { crearPedido, getPedidos, cambiarEstadoPedido } from '../api/mockPedidos';
@@ -29,7 +30,7 @@ function MenuGrid({ menu, onSelect }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       {categorias.map(cat => {
-        const items = menu.filter(m => m.tipo === cat.tipo && (m.disponible !== false));
+        const items = menu.filter(m => m.tipo === cat.tipo);
         if (items.length === 0) return null;
         return (
           <Box key={cat.tipo} sx={{ mb: 3, width: '100%' }}>
@@ -37,12 +38,37 @@ function MenuGrid({ menu, onSelect }) {
             <Grid container spacing={2} justifyContent="center">
               {items.map(item => (
                 <Grid item xs={12} sm={6} md={3} key={item.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Card sx={{ cursor: 'pointer', width: 140, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'box-shadow 0.2s', boxShadow: 3, '&:hover': { boxShadow: 8 } }} onClick={() => onSelect(item)}>
-                    <CardContent sx={{ textAlign: 'center', p: 1 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 17 }}>{item.nombre}</Typography>
-                      <Typography variant="caption" sx={{ fontSize: 15 }}>${item.precio?.toLocaleString() || 0}</Typography>
-                    </CardContent>
-                  </Card>
+                  {(() => {
+                    const disponible = item.disponible !== false;
+                    return (
+                      <Card
+                        sx={{
+                          cursor: disponible ? 'pointer' : 'not-allowed',
+                          width: 160,
+                          height: 110,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'box-shadow 0.2s, opacity 0.2s',
+                          boxShadow: 3,
+                          opacity: disponible ? 1 : 0.6,
+                          '&:hover': { boxShadow: 8 }
+                        }}
+                        onClick={() => disponible && onSelect(item)}
+                      >
+                        <CardContent sx={{ textAlign: 'center', p: 1 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 16 }}>{item.nombre}</Typography>
+                          <Typography variant="caption" sx={{ fontSize: 14, display: 'block' }}>${item.precio?.toLocaleString() || 0}</Typography>
+                          <Chip
+                            label={disponible ? 'Disponible' : 'No disponible'}
+                            color={disponible ? 'success' : 'default'}
+                            size="small"
+                            sx={{ mt: 0.5 }}
+                          />
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
                 </Grid>
               ))}
             </Grid>
@@ -267,6 +293,9 @@ export default function Mesero() {
                   {item.cantidad} x {item.producto.nombre} (${item.producto.precio?.toLocaleString() || 0} c/u)
                 </li>
               ))}
+              <li style={{ marginTop: 8, fontWeight: 700 }}>
+                Total: ${itemsPedido.reduce((acc, it) => acc + (it.cantidad * (it.producto.precio || 0)), 0).toLocaleString()}
+              </li>
             </ul>
           )}
         </Box>
