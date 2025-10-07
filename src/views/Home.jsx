@@ -14,6 +14,11 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Stack from '@mui/material/Stack';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import Layout from '../components/Layout';
 
 export default function Home() {
@@ -62,16 +67,32 @@ export default function Home() {
     }
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   return (
     <Layout title="Inicio">
-      <Paper sx={{ p: 3, maxWidth: 800, margin: '32px auto', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+      <Paper sx={{ 
+        p: { xs: 2, md: 3 }, 
+        maxWidth: { xs: '100%', md: 800 }, 
+        margin: { xs: '16px', md: '32px auto' }, 
+        backgroundColor: 'rgba(255,255,255,0.85)' 
+      }}>
         <Typography variant="h4" align="center" gutterBottom>
           Bienvenido!
         </Typography>
         <Typography variant="h6" align="center" gutterBottom>
           Lista de pedidos y su estado
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, justifyContent: 'center' }}>
+        
+        {/* Leyenda de colores - más compacta en móvil */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1, md: 2 }, 
+          flexWrap: 'wrap', 
+          mb: 2, 
+          justifyContent: 'center' 
+        }}>
           <Chip label="Pendiente" color="default" size="small" />
           <Chip label="En preparación" color="warning" size="small" />
           <Chip label="Preparado" color="info" size="small" />
@@ -79,7 +100,9 @@ export default function Home() {
           <Chip label="Entregado al cliente" color="primary" size="small" />
           <Chip label="Pagado" color="secondary" size="small" />
         </Box>
-        <FormControl sx={{ minWidth: 200, mb: 2 }} size="small">
+
+        {/* Filtro */}
+        <FormControl sx={{ minWidth: { xs: '100%', md: 200 }, mb: 2 }} size="small">
           <InputLabel id="filtro-estado-label">Filtrar por estado</InputLabel>
           <Select
             labelId="filtro-estado-label"
@@ -88,52 +111,136 @@ export default function Home() {
             onChange={e => setFiltroEstado(e.target.value)}
           >
             <MenuItem value="todos">Todos</MenuItem>
-          {estados.map(e => (
-            <MenuItem key={e} value={e}>{labelEstado(e)}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <TableContainer>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>#</TableCell>
-               <TableCell>Mesa</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Detalle</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+            {estados.map(e => (
+              <MenuItem key={e} value={e}>{labelEstado(e)}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Lista de pedidos responsive */}
+        {isMobile ? (
+          // Vista móvil con Cards
+          <Stack spacing={2}>
             {pedidosFiltrados.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">No hay pedidos</TableCell>
-              </TableRow>
+              <Card elevation={1}>
+                <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No hay pedidos
+                  </Typography>
+                </CardContent>
+              </Card>
             ) : (
               pedidosFiltrados.map(p => (
-                <TableRow key={p.id}>
-                  <TableCell>{p.id}</TableCell>
-                  <TableCell>{p.mesa || '-'}</TableCell>
-                  <TableCell align="center">
-                    <Chip label="" color={colorEstado(p.estado)} size="small" sx={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #222' }} />
-                  </TableCell>
-                  <TableCell>
-                    {p.items && p.items.length > 0 && (
-                      <>
-                        <b>Comidas/Bebidas:</b> {p.items.map(i => `${i.cantidad}x ${i.producto.nombre}`).join(', ')}
-                      </>
-                    )}
-                    {p.bebidasSinPreparar && p.bebidasSinPreparar.length > 0 && (
-                      <>
-                        <br /><b>Bebidas sin preparación:</b> {p.bebidasSinPreparar.map(b => `${b.cantidad}x ${b.producto.nombre}`).join(', ')}
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
+                <Card key={p.id} elevation={2} sx={{ border: '1px solid #e0e0e0' }}>
+                  <CardContent sx={{ pb: 2 }}>
+                    {/* Header del pedido */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      mb: 2 
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          #{p.id}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Mesa {p.mesa || '-'}
+                        </Typography>
+                      </Box>
+                      <Chip 
+                        label={labelEstado(p.estado)} 
+                        color={colorEstado(p.estado)} 
+                        size="small"
+                        sx={{ fontWeight: 'bold' }}
+                      />
+                    </Box>
+
+                    {/* Detalles del pedido */}
+                    <Box>
+                      {p.items && p.items.length > 0 && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                            🍽️ Comidas/Bebidas:
+                          </Typography>
+                          <Box sx={{ pl: 1 }}>
+                            {p.items.map((i, idx) => (
+                              <Typography key={idx} variant="body2" color="text.secondary">
+                                • {i.cantidad}x {i.producto.nombre}
+                              </Typography>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+                      
+                      {p.bebidasSinPreparar && p.bebidasSinPreparar.length > 0 && (
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                            🥤 Bebidas sin preparación:
+                          </Typography>
+                          <Box sx={{ pl: 1 }}>
+                            {p.bebidasSinPreparar.map((b, idx) => (
+                              <Typography key={idx} variant="body2" color="text.secondary">
+                                • {b.cantidad}x {b.producto.nombre}
+                              </Typography>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
               ))
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </Stack>
+        ) : (
+          // Vista desktop con tabla
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>#</TableCell>
+                  <TableCell>Mesa</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell>Detalle</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {pedidosFiltrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">No hay pedidos</TableCell>
+                  </TableRow>
+                ) : (
+                  pedidosFiltrados.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell>{p.id}</TableCell>
+                      <TableCell>{p.mesa || '-'}</TableCell>
+                      <TableCell align="center">
+                        <Chip 
+                          label={labelEstado(p.estado)} 
+                          color={colorEstado(p.estado)} 
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {p.items && p.items.length > 0 && (
+                          <>
+                            <b>Comidas/Bebidas:</b> {p.items.map(i => `${i.cantidad}x ${i.producto.nombre}`).join(', ')}
+                          </>
+                        )}
+                        {p.bebidasSinPreparar && p.bebidasSinPreparar.length > 0 && (
+                          <>
+                            <br /><b>Bebidas sin preparación:</b> {p.bebidasSinPreparar.map(b => `${b.cantidad}x ${b.producto.nombre}`).join(', ')}
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
     </Layout>
   );

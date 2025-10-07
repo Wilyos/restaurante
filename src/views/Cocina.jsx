@@ -55,54 +55,75 @@ export default function Cocina() {
               <Typography>No hay pedidos pendientes.</Typography>
             )}
             {pedidos.filter(p => p.estado === 'pendiente' || p.estado === 'en preparación' || p.estado === 'entregado').map(p => (
-              <ListItem key={p.id} divider alignItems="flex-start">
-                <ListItemText
-                  primary={`#${p.id} - ${p.nombre}`}
-                  secondary={
-                    <>
-                      <b>Comidas y bebidas a preparar:</b>
-                      <List dense sx={{ pl: 2 }}>
-                        {p.items && p.items.filter(item => item.producto.tipo !== 'bebida').length > 0 ?
-                          p.items.flatMap((item, idx) => (
-                            item.producto.tipo !== 'bebida'
-                              ? Array.from({ length: item.cantidad }).map((_, subIdx) => (
-                                  <ListItem key={idx + '-' + subIdx} disableGutters>
-                                    <Stack direction="row" spacing={2} alignItems="center" width="100%">
-                                      <ListItemText
-                                        primary={`1x ${item.producto.nombre}`}
-                                        secondary={item.preparado && item.preparado[subIdx] ? 'Preparado' : 'Pendiente'}
-                                      />
-                                      {!(item.preparado && item.preparado[subIdx]) && (
-                                        <Button size="small" color="success" variant="outlined" onClick={async () => {
-                                          await marcarItemPreparado(p.id, idx, subIdx);
-                                          cargarPedidos();
-                                        }}>Marcar preparado</Button>
-                                      )}
-                                    </Stack>
-                                  </ListItem>
-                                ))
-                              : null
+              <ListItem key={p.id} divider alignItems="flex-start" sx={{ flexDirection: 'column', gap: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Pedido #{p.id} - Mesa {p.mesa || 'N/A'}
+                </Typography>
+                
+                {/* Items de comida */}
+                {p.items && p.items.filter(item => item.producto.tipo !== 'bebida').length > 0 && (
+                  <div style={{ width: '100%' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#d32f2f' }}>
+                      🍽️ Comidas a preparar:
+                    </Typography>
+                    {p.items.flatMap((item, idx) => (
+                      item.producto.tipo !== 'bebida'
+                        ? Array.from({ length: item.cantidad }).map((_, subIdx) => (
+                            <Paper key={idx + '-' + subIdx} elevation={1} sx={{ p: 2, mb: 1, bgcolor: item.preparado && item.preparado[subIdx] ? '#e8f5e8' : '#fff3e0' }}>
+                              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
+                                <div>
+                                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                    1x {item.producto.nombre}
+                                  </Typography>
+                                  <Typography variant="caption" color={item.preparado && item.preparado[subIdx] ? 'success.main' : 'warning.main'}>
+                                    {item.preparado && item.preparado[subIdx] ? '✅ Preparado' : '⏳ Pendiente'}
+                                  </Typography>
+                                </div>
+                                {!(item.preparado && item.preparado[subIdx]) && (
+                                  <Button 
+                                    size="small" 
+                                    color="success" 
+                                    variant="contained" 
+                                    onClick={async () => {
+                                      await marcarItemPreparado(p.id, idx, subIdx);
+                                      cargarPedidos();
+                                    }}
+                                    sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
+                                  >
+                                    ✅ Marcar preparado
+                                  </Button>
+                                )}
+                              </Stack>
+                            </Paper>
                           ))
-                          : <ListItem><ListItemText primary="No hay ítems." /></ListItem>}
-                      </List>
-                      {p.bebidasSinPreparar && p.bebidasSinPreparar.length > 0 && (
-                        <>
-                          <b>Bebidas sin preparación:</b>
-                          <List dense sx={{ pl: 2 }}>
-                            {p.bebidasSinPreparar.map((b, idx) => (
-                              <ListItem key={idx} disableGutters>
-                                <ListItemText primary={`${b.cantidad}x ${b.producto.nombre}`} secondary="Listo para entregar" />
-                              </ListItem>
-                            ))}
-                          </List>
-                        </>
-                      )}
-                      <br />
-                      Estado general: {p.estado === 'entregado' ? 'entregado (listo para cobrar)' : p.estado}
-                    </>
-                  }
-                />
-                <Stack direction="row" spacing={1}>
+                        : null
+                    ))}
+                  </div>
+                )}
+
+                {/* Bebidas sin preparar */}
+                {p.bebidasSinPreparar && p.bebidasSinPreparar.length > 0 && (
+                  <div style={{ width: '100%' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#1976d2' }}>
+                      🥤 Bebidas (listas para barra):
+                    </Typography>
+                    {p.bebidasSinPreparar.map((b, idx) => (
+                      <Paper key={idx} elevation={1} sx={{ p: 1.5, mb: 1, bgcolor: '#e3f2fd' }}>
+                        <Typography variant="body2">
+                          {b.cantidad}x {b.producto.nombre} - ✅ Listo para entregar
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </div>
+                )}
+
+                {/* Estado y botón principal */}
+                <div style={{ width: '100%' }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontStyle: 'italic' }}>
+                    Estado: <strong>{p.estado === 'entregado' ? 'entregado (listo para cobrar)' : p.estado}</strong>
+                  </Typography>
+                </div>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: { xs: 1, sm: 0 }, minWidth: { xs: '100%', sm: 'auto' } }}>
                   {p.estado !== 'preparado' && (
                     <Button
                       variant="contained"
@@ -115,6 +136,10 @@ export default function Cocina() {
                           !Array.isArray(item.preparado) || item.preparado.some(val => !val)
                         )
                       }
+                      sx={{ 
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                        minWidth: { xs: '100%', sm: 'auto' }
+                      }}
                     >
                       {p.estado === 'pendiente' ? 'Marcar en preparación' : 'Marcar preparado'}
                     </Button>

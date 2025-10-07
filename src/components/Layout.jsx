@@ -51,7 +51,7 @@ export default function Layout({ title, children }) {
   <AppBar position="static" sx={{ mb: 4, bgcolor: 'rgba(0,0,0,0.85)', boxShadow: 'none', backdropFilter: 'blur(4px)', borderRadius: 3, mt: 2, mx: 'auto', width: { xs: '98%', sm: '95%', md: '50vw', lg: '50vw' } }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Typography variant="h6" component="div" sx={{ color: '#fff', fontWeight: 700 }}>
-            Restaurante
+            Restaurante NFC
           </Typography>
           {isMobile ? (
             <>
@@ -64,7 +64,7 @@ export default function Layout({ title, children }) {
                   <List>
                     {navLinks.map(link => (
                       <ListItem key={link.to} disablePadding>
-                        <ListItemButton component={Link} to={link.to} selected={location.pathname === link.to} sx={location.pathname === link.to ? activeStyle : { color: '#fff' }}>
+                        <ListItemButton component={Link} to={link.to} selected={location.pathname === link.to} sx={location.pathname === link.to ? { ...activeStyle, color: '#43a047' } : { color: '#000' }}>
                           {link.icon}
                         </ListItemButton>
                       </ListItem>

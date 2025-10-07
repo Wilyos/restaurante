@@ -12,6 +12,7 @@ import TextField from '@mui/material/TextField';
 import PersonIcon from '@mui/icons-material/Person';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
 import Layout from '../components/Layout';
 import { getMenu } from '../api/mockMenu';
 import { crearPedido, getPedidos, cambiarEstadoPedido } from '../api/mockPedidos';
@@ -35,17 +36,17 @@ function MenuGrid({ menu, onSelect }) {
         return (
           <Box key={cat.tipo} sx={{ mb: 3, width: '100%' }}>
             <Typography variant="h6" sx={{ mb: 1, textAlign: 'center' }}>{cat.label}</Typography>
-            <Grid container spacing={2} justifyContent="center">
+            <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
               {items.map(item => (
-                <Grid item xs={12} sm={6} md={3} key={item.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Grid item xs={6} sm={6} md={3} key={item.id} sx={{ display: 'flex', justifyContent: 'center' }}>
                   {(() => {
                     const disponible = item.disponible !== false;
                     return (
                       <Card
                         sx={{
                           cursor: disponible ? 'pointer' : 'not-allowed',
-                          width: 160,
-                          height: 110,
+                          width: { xs: 140, sm: 160 },
+                          height: { xs: 95, sm: 110 },
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -56,14 +57,14 @@ function MenuGrid({ menu, onSelect }) {
                         }}
                         onClick={() => disponible && onSelect(item)}
                       >
-                        <CardContent sx={{ textAlign: 'center', p: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 16 }}>{item.nombre}</Typography>
-                          <Typography variant="caption" sx={{ fontSize: 14, display: 'block' }}>${item.precio?.toLocaleString() || 0}</Typography>
+                        <CardContent sx={{ textAlign: 'center', p: { xs: 0.5, sm: 1 } }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: { xs: 14, sm: 16 } }}>{item.nombre}</Typography>
+                          <Typography variant="caption" sx={{ fontSize: { xs: 12, sm: 14 }, display: 'block' }}>${item.precio?.toLocaleString() || 0}</Typography>
                           <Chip
                             label={disponible ? 'Disponible' : 'No disponible'}
                             color={disponible ? 'success' : 'default'}
                             size="small"
-                            sx={{ mt: 0.5 }}
+                            sx={{ mt: 0.5, fontSize: { xs: 10, sm: 12 } }}
                           />
                         </CardContent>
                       </Card>
@@ -159,7 +160,7 @@ export default function Mesero() {
     return (
       <Layout title="Mesero">
         <Typography variant="h6" sx={{ mb: 2 }}>Selecciona una mesa</Typography>
-        <Grid container spacing={2} justifyContent="center" alignItems="center" sx={{ mt: 2, mb: 2, minHeight: 320 }}>
+        <Grid container spacing={2} sx={{ mt: 2, mb: 2, minHeight: 320, justifyContent: 'center', alignItems: 'center' }}>
           {mesas.map(num => {
             const ocupada = !!mesasOcupadas[num];
             return (
@@ -184,23 +185,95 @@ export default function Mesero() {
         {/* Lista de pedidos listos para entregar */}
         {pedidosListos.length > 0 && (
           <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Órdenes listas para entregar</Typography>
+            <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', color: '#4caf50', fontWeight: 'bold' }}>
+              🛎️ Órdenes listas para entregar
+            </Typography>
             {pedidosListos.filter(p => p.estado === 'entregado').map(p => (
-              <Paper key={p.id} sx={{ mb: 2, p: 2 }}>
-                <Typography variant="subtitle1">Mesa {p.mesa}</Typography>
-                <ul>
+              <Paper 
+                key={p.id} 
+                elevation={4} 
+                sx={{ 
+                  mb: 2, 
+                  p: 3, 
+                  border: '2px solid #4caf50',
+                  borderRadius: 2,
+                  bgcolor: '#f1f8e9'
+                }}
+              >
+                {/* Header del pedido */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                    🍽️ Pedido #{p.id}
+                  </Typography>
+                  <Chip 
+                    label={`Mesa ${p.mesa}`}
+                    color="success"
+                    sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}
+                  />
+                </Box>
+
+                {/* Items del pedido */}
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#2e7d32' }}>
+                  Items a entregar:
+                </Typography>
+                
+                <Box sx={{ mb: 2 }}>
+                  {/* Comidas */}
                   {p.items && p.items.filter(i => i.producto.tipo !== 'bebida').map((i, idx) => (
-                    <li key={idx}>{i.cantidad} x {i.producto.nombre}</li>
+                    <Paper 
+                      key={idx} 
+                      elevation={1} 
+                      sx={{ 
+                        p: 1.5, 
+                        mb: 1, 
+                        bgcolor: '#fff',
+                        border: '1px solid #c8e6c9'
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        🍽️ {i.cantidad}x {i.producto.nombre}
+                      </Typography>
+                    </Paper>
                   ))}
+                  
+                  {/* Bebidas */}
                   {p.bebidas && p.bebidas.map((b, idx) => (
-                    <li key={'b' + idx}>{b.cantidad} x {b.producto.nombre} (bebida)</li>
+                    <Paper 
+                      key={'b' + idx} 
+                      elevation={1} 
+                      sx={{ 
+                        p: 1.5, 
+                        mb: 1, 
+                        bgcolor: '#e3f2fd',
+                        border: '1px solid #90caf9'
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        🥤 {b.cantidad}x {b.producto.nombre}
+                      </Typography>
+                    </Paper>
                   ))}
-                </ul>
-                <Button variant="contained" color="success" onClick={async () => {
-                  await cambiarEstadoPedido(p.id, 'entregado-al-cliente');
-                  // Refrescar lista
-                  getPedidos().then(pedidos => setPedidosListos(pedidos.filter(p => p.estado === 'entregado')));
-                }}>Marcar como entregado</Button>
+                </Box>
+
+                {/* Botón de entrega */}
+                <Button 
+                  variant="contained" 
+                  color="success" 
+                  fullWidth
+                  size="large"
+                  sx={{ 
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                    py: 1.5
+                  }}
+                  onClick={async () => {
+                    await cambiarEstadoPedido(p.id, 'entregado-al-cliente');
+                    // Refrescar lista
+                    getPedidos().then(pedidos => setPedidosListos(pedidos.filter(p => p.estado === 'entregado')));
+                  }}
+                >
+                  ✅ Marcar como entregado a cliente
+                </Button>
               </Paper>
             ))}
           </Box>
@@ -282,23 +355,70 @@ export default function Mesero() {
         </Dialog>
 
         {/* Lista de ítems agregados */}
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1, color: '#000' }}>Pedido actual:</Typography>
+        <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', border: '2px solid #28a745' }}>
+          <Typography variant="h6" sx={{ mb: 2, color: '#28a745', fontWeight: 'bold', textAlign: 'center' }}>
+            🛒 Pedido actual
+          </Typography>
           {itemsPedido.length === 0 ? (
-            <Typography sx={{ color: '#ccc' }}>No hay productos agregados.</Typography>
+            <Paper elevation={1} sx={{ p: 2, textAlign: 'center', bgcolor: '#fff', border: '1px dashed #ccc' }}>
+              <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                📝 No hay productos agregados
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Selecciona productos del menú para agregar al pedido
+              </Typography>
+            </Paper>
           ) : (
-            <ul style={{ color: '#000', marginBottom: 0 }}>
-              {itemsPedido.map((item, idx) => (
-                <li key={item.producto.id}>
-                  {item.cantidad} x {item.producto.nombre} (${item.producto.precio?.toLocaleString() || 0} c/u)
-                </li>
-              ))}
-              <li style={{ marginTop: 8, fontWeight: 700 }}>
-                Total: ${itemsPedido.reduce((acc, it) => acc + (it.cantidad * (it.producto.precio || 0)), 0).toLocaleString()}
-              </li>
-            </ul>
+            <>
+              <Stack spacing={1} sx={{ mb: 2 }}>
+                {itemsPedido.map((item, idx) => (
+                  <Paper 
+                    key={item.producto.id} 
+                    elevation={1} 
+                    sx={{ 
+                      p: 2, 
+                      bgcolor: '#fff',
+                      border: '1px solid #e9ecef'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                          {item.producto.tipo === 'bebida' ? '🥤' : '🍽️'} {item.cantidad}x {item.producto.nombre}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          ${item.producto.precio?.toLocaleString() || 0} c/u
+                        </Typography>
+                      </Box>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#28a745' }}>
+                        ${(item.cantidad * (item.producto.precio || 0)).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))}
+              </Stack>
+              
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  p: 2, 
+                  bgcolor: '#28a745', 
+                  color: 'white',
+                  border: '2px solid #1e7e34'
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    💰 TOTAL:
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                    ${itemsPedido.reduce((acc, it) => acc + (it.cantidad * (it.producto.precio || 0)), 0).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Paper>
+            </>
           )}
-        </Box>
+        </Paper>
 
         <Button
           variant="contained"
