@@ -13,6 +13,7 @@ import Barra from './views/Barra';
 import ProtectedRoute from './routes/ProtectedRoute';
 import './App.css';
 import AdminMenu from './views/AdminMenu';
+import AdminUsers from './views/AdminUsers';
 
 
 
@@ -46,6 +47,11 @@ function App() {
         <Route path="/admin/menu" element={
           <ProtectedRoute allowed={["admin"]}>
             <AdminMenu />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+          <ProtectedRoute allowed={["admin"]}>
+            <AdminUsers />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Home />} />
