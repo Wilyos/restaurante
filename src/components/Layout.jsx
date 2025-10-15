@@ -6,6 +6,8 @@ import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import LoginIcon from '@mui/icons-material/Login';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
+import LoyaltyIcon from '@mui/icons-material/Loyalty';
+import TuneIcon from '@mui/icons-material/Tune';
 import React, { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -26,6 +28,7 @@ import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import SessionTimer from './SessionTimer';
 
 export default function Layout({ title, children }) {
   const { rol, user } = useAuth();
@@ -51,6 +54,7 @@ export default function Layout({ title, children }) {
     ...(rol === 'barra' || rol === 'admin' ? [{ icon: <LocalBarIcon fontSize="medium" />, to: '/barra' }] : []),
     ...(rol === 'cocina' || rol === 'admin' ? [{ icon: <KitchenIcon fontSize="medium" />, to: '/cocina' }] : []),
     ...(rol === 'caja' || rol === 'admin' ? [{ icon: <PointOfSaleIcon fontSize="medium" />, to: '/caja' }] : []),
+    ...(rol === 'caja' || rol === 'admin' ? [{ icon: <LoyaltyIcon fontSize="medium" />, to: '/admin/puntos' }] : []),
     ...(rol === 'admin' ? [{ icon: <SettingsIcon fontSize="medium" />, to: '/admin/menu' }] : []),
     { icon: <LoginIcon fontSize="medium" />, to: '/login' },
   ];
@@ -58,21 +62,26 @@ export default function Layout({ title, children }) {
   // Tabs de administración
   const adminTabs = [
     { label: 'Menú', value: '/admin/menu', icon: <SettingsIcon /> },
-    { label: 'Usuarios', value: '/admin/users', icon: <PeopleIcon /> }
+    { label: 'Usuarios', value: '/admin/users', icon: <PeopleIcon /> },
+    { label: 'Puntos NFC', value: '/admin/puntos', icon: <LoyaltyIcon /> },
+    { label: 'Config. NFC', value: '/admin/config-nfc', icon: <TuneIcon /> }
   ];
   return (
     <Box sx={{ flexGrow: 1 }}>
   <AppBar position="static" sx={{ mb: 4, bgcolor: 'rgba(0,0,0,0.85)', boxShadow: 'none', backdropFilter: 'blur(4px)', borderRadius: 3, mt: 2, mx: 'auto', width: { xs: '98%', sm: '95%', md: '50vw', lg: '50vw' } }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Box>
-            <Typography variant="h6" component="div" sx={{ color: '#fff', fontWeight: 700 }}>
-              Restaurante NFC
-            </Typography>
-            {user && (
-              <Typography variant="caption" sx={{ color: '#a0a0a0', fontSize: '0.75rem' }}>
-                Bienvenido, {user.name}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box>
+              <Typography variant="h6" component="div" sx={{ color: '#fff', fontWeight: 700 }}>
+                Restaurante NFC
               </Typography>
-            )}
+              {user && (
+                <Typography variant="caption" sx={{ color: '#a0a0a0', fontSize: '0.75rem' }}>
+                  Bienvenido, {user.name}
+                </Typography>
+              )}
+            </Box>
+            {user && <SessionTimer />}
           </Box>
           {isMobile ? (
             <>

@@ -55,3 +55,83 @@ body, p, span, li, .MuiTypography-root {
 .read-the-docs {
   color: #888;
 }
+
+/* Estilos para el Sistema de Puntos NFC */
+.bg-puntos {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* Animación para el lector NFC */
+@keyframes nfc-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+  }
+}
+
+.nfc-reading {
+  animation: nfc-pulse 2s infinite;
+}
+
+/* Estilos para niveles de clientes */
+.nivel-bronce {
+  background: linear-gradient(135deg, #cd7f32 0%, #d4af37 100%);
+}
+
+.nivel-plata {
+  background: linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%);
+}
+
+.nivel-oro {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+}
+
+.nivel-diamante {
+  background: linear-gradient(135deg, #b9f2ff 0%, #66d9ef 100%);
+}
+
+/* Efectos hover para tarjetas de clientes */
+.cliente-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Animación para puntos ganados */
+@keyframes puntos-ganados {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(5deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.puntos-animation {
+  animation: puntos-ganados 0.6s ease-in-out;
+}
+
+/* Estilos para transacciones */
+.transaccion-acumulacion {
+  border-left: 4px solid #4caf50;
+}
+
+.transaccion-canje {
+  border-left: 4px solid #ff9800;
+}
+
+.transaccion-bonificacion {
+  border-left: 4px solid #2196f3;
+}

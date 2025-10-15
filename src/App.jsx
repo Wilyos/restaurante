@@ -14,6 +14,8 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import './App.css';
 import AdminMenu from './views/AdminMenu';
 import AdminUsers from './views/AdminUsers';
+import SistemaPuntos from './views/SistemaPuntos';
+import ConfiguracionNFC from './views/ConfiguracionNFC';
 
 
 
@@ -52,6 +54,16 @@ function App() {
         <Route path="/admin/users" element={
           <ProtectedRoute allowed={["admin"]}>
             <AdminUsers />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/puntos" element={
+          <ProtectedRoute allowed={["admin", "caja"]}>
+            <SistemaPuntos />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/config-nfc" element={
+          <ProtectedRoute allowed={["admin"]}>
+            <ConfiguracionNFC />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Home />} />

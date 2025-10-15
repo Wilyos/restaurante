@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { authenticateUser } from '../api/mockUsers';
+import { useInactivityWithWarning } from '../hooks/useInactivityTimer';
+import InactivityWarningDialog from '../components/InactivityWarningDialog';
 
 const AuthContext = createContext();
 
@@ -15,6 +17,11 @@ export function AuthProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  
+  // Configuración de timeout (30 minutos por defecto)
+  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutos
+  const WARNING_TIME = 5 * 60 * 1000; // Advertir 5 minutos antes
 
   // Mantener compatibilidad con el rol para componentes existentes
   const rol = user?.role || null;
@@ -53,7 +60,35 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     setError('');
+    setShowInactivityWarning(false);
   };
+
+  // Manejar timeout por inactividad
+  const handleInactivityTimeout = () => {
+    console.log('Sesión cerrada por inactividad');
+    logout();
+  };
+
+  // Manejar advertencia de inactividad
+  const handleInactivityWarning = () => {
+    if (user) {
+      setShowInactivityWarning(true);
+    }
+  };
+
+  // Extender sesión
+  const extendSession = () => {
+    setShowInactivityWarning(false);
+    resetTimer();
+  };
+
+  // Hook de timer de inactividad (solo si hay usuario)
+  const { resetTimer, getRemainingTime } = useInactivityWithWarning(
+    handleInactivityTimeout,
+    handleInactivityWarning,
+    SESSION_TIMEOUT,
+    WARNING_TIME
+  );
 
   // Función legacy para compatibilidad
   const setRol = (newRol) => {
@@ -79,9 +114,20 @@ export function AuthProvider({ children }) {
       setRol, // Compatibilidad
       loading,
       error,
-      isAuthenticated: !!user
+      isAuthenticated: !!user,
+      extendSession,
+      getRemainingTime
     }}>
       {children}
+      
+      {/* Diálogo de advertencia de inactividad */}
+      <InactivityWarningDialog
+        open={showInactivityWarning}
+        onExtend={extendSession}
+        onLogout={logout}
+        remainingTime={getRemainingTime()}
+        warningTime={WARNING_TIME}
+      />
     </AuthContext.Provider>
   );
 }

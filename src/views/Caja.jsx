@@ -10,8 +10,26 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Alert from '@mui/material/Alert';
+import TextField from '@mui/material/TextField';
+import Grid from '@mui/material/Grid';
+import { 
+  Loyalty as LoyaltyIcon,
+  Payment as PaymentIcon,
+  Discount as DiscountIcon
+} from '@mui/icons-material';
 import Layout from '../components/Layout';
+import LectorNFC from '../components/LectorNFC';
 import { getPedidos, cambiarEstadoPedido } from '../api/mockPedidos';
+import { 
+  acumularPuntos, 
+  canjearPuntos, 
+  getConfiguracionPuntos 
+} from '../api/mockClientesNFC';
 
 export default function Caja() {
   useEffect(() => {
@@ -20,6 +38,14 @@ export default function Caja() {
   }, []);
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Estados para sistema de puntos
+  const [dialogPuntos, setDialogPuntos] = useState(false);
+  const [pedidoActual, setPedidoActual] = useState(null);
+  const [clienteNFC, setClienteNFC] = useState(null);
+  const [configuracionPuntos, setConfiguracionPuntos] = useState({});
+  const [descuentoPuntos, setDescuentoPuntos] = useState(0);
+  const [puntosACanjear, setPuntosACanjear] = useState('');
 
   const cargarPedidos = async () => {
     setLoading(true);
@@ -28,8 +54,14 @@ export default function Caja() {
     setLoading(false);
   };
 
+  const cargarConfiguracion = async () => {
+    const config = await getConfiguracionPuntos();
+    setConfiguracionPuntos(config);
+  };
+
   useEffect(() => {
     cargarPedidos();
+    cargarConfiguracion();
   }, []);
 
 
@@ -41,6 +73,67 @@ export default function Caja() {
   const marcarPagado = async (id) => {
     await cambiarEstadoPedido(id, 'pagado');
     cargarPedidos();
+  };
+
+  const abrirSistemaPuntos = (pedido) => {
+    setPedidoActual(pedido);
+    setClienteNFC(null);
+    setDescuentoPuntos(0);
+    setPuntosACanjear('');
+    setDialogPuntos(true);
+  };
+
+  const handleClienteDetectado = (cliente) => {
+    setClienteNFC(cliente);
+  };
+
+  const handleErrorNFC = (error) => {
+    if (error.tipo === 'no_registrado') {
+      alert('Tarjeta NFC detectada pero no registrada. Debe registrarse primero en el Sistema de Puntos.');
+    } else {
+      alert(`Error: ${error.mensaje}`);
+    }
+  };
+
+  const aplicarDescuentoPuntos = () => {
+    const puntos = parseInt(puntosACanjear);
+    if (puntos && puntos >= configuracionPuntos.puntosMinimosCanjeables && puntos <= clienteNFC.puntos) {
+      const descuento = puntos * configuracionPuntos.valorPunto;
+      setDescuentoPuntos(descuento);
+    }
+  };
+
+  const procesarCobroConPuntos = async () => {
+    try {
+      const total = calcularTotal(pedidoActual);
+      
+      // Si hay descuento por puntos, aplicarlo
+      if (descuentoPuntos > 0) {
+        const puntosUsados = parseInt(puntosACanjear);
+        await canjearPuntos(clienteNFC.nfcId, puntosUsados);
+      }
+
+      // Acumular puntos por la compra (sobre el total original)
+      if (clienteNFC) {
+        const descripcion = `Pedido #${pedidoActual.id}${descuentoPuntos > 0 ? ` (con descuento de $${descuentoPuntos.toLocaleString()})` : ''}`;
+        await acumularPuntos(clienteNFC.nfcId, total, descripcion);
+      }
+
+      // Marcar como pagado
+      await marcarPagado(pedidoActual.id);
+      
+      // Cerrar diálogo
+      setDialogPuntos(false);
+      
+      alert(`¡Pago procesado exitosamente!${descuentoPuntos > 0 ? `\nDescuento aplicado: $${descuentoPuntos.toLocaleString()}` : ''}${clienteNFC ? `\nPuntos ganados: ${Math.floor(total * configuracionPuntos.puntosPerPeso)}` : ''}`);
+    } catch (error) {
+      alert(`Error procesando el pago: ${error.message}`);
+    }
+  };
+
+  const cobrarSinPuntos = async (pedidoId) => {
+    await marcarPagado(pedidoId);
+    alert('¡Pago procesado exitosamente!');
   };
 
   const imprimirTicket = (pedido) => {
@@ -310,11 +403,27 @@ export default function Caja() {
                 >
                   🎫 Imprimir Ticket
                 </Button>
+                
+                <Button
+                  variant="outlined"
+                  color="info"
+                  size="large"
+                  onClick={() => abrirSistemaPuntos(p)}
+                  startIcon={<LoyaltyIcon />}
+                  sx={{ 
+                    fontWeight: 'bold',
+                    minWidth: { xs: '100%', sm: '180px' }
+                  }}
+                >
+                  🎯 Cobrar con NFC
+                </Button>
+
                 <Button
                   variant="contained"
                   color="secondary"
                   size="large"
-                  onClick={() => marcarPagado(p.id)}
+                  onClick={() => cobrarSinPuntos(p.id)}
+                  startIcon={<PaymentIcon />}
                   sx={{ 
                     fontWeight: 'bold',
                     fontSize: '1.1rem',
@@ -328,6 +437,165 @@ export default function Caja() {
           ))}
         </Stack>
       )}
+
+      {/* Diálogo del Sistema de Puntos */}
+      <Dialog 
+        open={dialogPuntos} 
+        onClose={() => setDialogPuntos(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <LoyaltyIcon sx={{ mr: 1 }} />
+            Sistema de Puntos NFC - Pedido #{pedidoActual?.id}
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ mt: 2 }}>
+          <Grid container spacing={3}>
+            {/* Lector NFC */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  🔍 Detectar Cliente
+                </Typography>
+                <LectorNFC 
+                  onClienteDetectado={handleClienteDetectado}
+                  onError={handleErrorNFC}
+                  disabled={false}
+                />
+              </Box>
+            </Grid>
+
+            {/* Información del pedido y puntos */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2, bgcolor: '#fafafa' }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  📋 Resumen del Pedido
+                </Typography>
+                
+                {pedidoActual && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                      Total a pagar: ${calcularTotal(pedidoActual).toLocaleString()}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Mesa: {pedidoActual.mesa || 'N/A'}
+                    </Typography>
+                  </Box>
+                )}
+
+                {clienteNFC && (
+                  <>
+                    <Divider sx={{ my: 2 }} />
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                        👤 {clienteNFC.nombre}
+                      </Typography>
+                      <Typography variant="body2">
+                        Puntos disponibles: <strong>{clienteNFC.puntos}</strong>
+                      </Typography>
+                      <Typography variant="caption">
+                        Nivel: {clienteNFC.nivel}
+                      </Typography>
+                    </Alert>
+
+                    {/* Sección de canje de puntos */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                        💰 Canjear Puntos por Descuento
+                      </Typography>
+                      
+                      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                        <TextField
+                          label="Puntos a canjear"
+                          type="number"
+                          size="small"
+                          value={puntosACanjear}
+                          onChange={(e) => setPuntosACanjear(e.target.value)}
+                          inputProps={{ 
+                            min: configuracionPuntos.puntosMinimosCanjeables || 100, 
+                            max: clienteNFC.puntos 
+                          }}
+                          sx={{ flexGrow: 1 }}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={aplicarDescuentoPuntos}
+                          disabled={!puntosACanjear || puntosACanjear < (configuracionPuntos.puntosMinimosCanjeables || 100)}
+                          startIcon={<DiscountIcon />}
+                        >
+                          Aplicar
+                        </Button>
+                      </Stack>
+
+                      {descuentoPuntos > 0 && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                          <Typography variant="body2">
+                            <strong>Descuento aplicado: ${descuentoPuntos.toLocaleString()}</strong>
+                          </Typography>
+                          <Typography variant="body2">
+                            Total final: ${(calcularTotal(pedidoActual) - descuentoPuntos).toLocaleString()}
+                          </Typography>
+                        </Alert>
+                      )}
+
+                      <Typography variant="caption" color="text.secondary">
+                        Mínimo {configuracionPuntos.puntosMinimosCanjeables || 100} puntos. 1 punto = $1 de descuento
+                      </Typography>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Puntos que ganará */}
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ color: '#4caf50', fontWeight: 'bold' }}>
+                        ✨ Puntos que ganará con esta compra:
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: '#4caf50', fontWeight: 'bold' }}>
+                        +{Math.floor(calcularTotal(pedidoActual) * (configuracionPuntos.puntosPerPeso || 1))} puntos
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {configuracionPuntos.puntosPerPeso || 1} punto por cada peso gastado
+                      </Typography>
+                    </Box>
+                  </>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, bgcolor: '#fafafa' }}>
+          <Button onClick={() => setDialogPuntos(false)}>
+            Cancelar
+          </Button>
+          
+          {!clienteNFC ? (
+            <Button
+              variant="contained"
+              onClick={() => cobrarSinPuntos(pedidoActual?.id)}
+              startIcon={<PaymentIcon />}
+            >
+              Cobrar Sin Puntos
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={procesarCobroConPuntos}
+              startIcon={<LoyaltyIcon />}
+              sx={{ minWidth: 200 }}
+            >
+              {descuentoPuntos > 0 
+                ? `Cobrar ($${descuentoPuntos.toLocaleString()} desc.)` 
+                : 'Cobrar y Acumular Puntos'
+              }
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Layout>
   );
 }
