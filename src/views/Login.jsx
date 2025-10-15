@@ -158,21 +158,6 @@ export default function Login() {
                 barra1/barra123 • caja1/caja123
               </Typography>
             </Box>
-
-            <Divider sx={{ my: 3 }}>
-              <Typography variant="caption" color="text.secondary">
-                o
-              </Typography>
-            </Divider>
-
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => setShowLegacyLogin(true)}
-              sx={{ textDecoration: 'underline' }}
-            >
-              Acceso rápido por cargo
-            </Button>
           </>
         ) : (
           // Sistema legacy para acceso rápido
