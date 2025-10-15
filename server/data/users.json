@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Administrador",
+    "email": "admin@restaurante.com",
+    "role": "admin",
+    "createdAt": "2025-10-15T16:43:30.593Z"
+  },
+  {
+    "id": 2,
+    "username": "mesero",
+    "password": "mesero123",
+    "name": "Juan Mesero",
+    "email": "mesero@restaurante.com",
+    "role": "mesero",
+    "createdAt": "2025-10-15T16:43:30.594Z"
+  },
+  {
+    "id": 3,
+    "username": "caja",
+    "password": "caja123",
+    "name": "Ana Cajera",
+    "email": "caja@restaurante.com",
+    "role": "caja",
+    "createdAt": "2025-10-15T16:43:30.594Z"
+  },
+  {
+    "id": 4,
+    "username": "cocina",
+    "password": "cocina123",
+    "name": "Carlos Cocinero",
+    "email": "cocina@restaurante.com",
+    "role": "cocina",
+    "createdAt": "2025-10-15T16:43:30.594Z"
+  }
+]

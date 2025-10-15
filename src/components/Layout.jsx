@@ -29,6 +29,7 @@ import { useAuth } from '../context/AuthContext';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import SessionTimer from './SessionTimer';
+import ConnectivityStatus from './ConnectivityStatus';
 
 export default function Layout({ title, children }) {
   const { rol, user } = useAuth();
@@ -81,7 +82,12 @@ export default function Layout({ title, children }) {
                 </Typography>
               )}
             </Box>
-            {user && <SessionTimer />}
+            {user && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <ConnectivityStatus />
+                <SessionTimer />
+              </Box>
+            )}
           </Box>
           {isMobile ? (
             <>

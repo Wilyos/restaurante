@@ -1,0 +1,39 @@
+{
+  "puntosPorPeso": 1,
+  "valorPunto": 1,
+  "minimoParaCanje": 100,
+  "bonificacionBienvenida": 50,
+  "niveles": [
+    {
+      "nombre": "Bronce",
+      "minPuntos": 0,
+      "multiplicador": 1,
+      "color": "#cd7f32"
+    },
+    {
+      "nombre": "Plata",
+      "minPuntos": 200,
+      "multiplicador": 1.2,
+      "color": "#c0c0c0"
+    },
+    {
+      "nombre": "Oro",
+      "minPuntos": 500,
+      "multiplicador": 1.5,
+      "color": "#ffd700"
+    },
+    {
+      "nombre": "Platino",
+      "minPuntos": 1000,
+      "multiplicador": 2,
+      "color": "#e5e4e2"
+    },
+    {
+      "nombre": "Diamante",
+      "minPuntos": 2500,
+      "multiplicador": 3,
+      "color": "#b9f2ff"
+    }
+  ],
+  "lastUpdated": "2025-10-15T16:43:30.594Z"
+}

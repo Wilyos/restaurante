@@ -1,4 +1,6 @@
 // Mock API para gestión de usuarios
+import { authManager } from '../utils/dataManager.js';
+
 const USERS_KEY = 'restaurante_users';
 
 // Usuarios por defecto del sistema
@@ -70,26 +72,33 @@ export function getUsers() {
   });
 }
 
-// Autenticar usuario
-export function authenticateUser(username, password) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const users = initUsers();
-      const user = users.find(u => 
-        u.username.toLowerCase() === username.toLowerCase() && 
-        u.password === password &&
-        u.active
-      );
-      
-      if (user) {
-        // Devolver usuario sin contraseña
-        const { password: _, ...userWithoutPassword } = user;
-        resolve(userWithoutPassword);
-      } else {
-        reject(new Error('Usuario o contraseña incorrectos'));
-      }
-    }, 300);
-  });
+// Autenticar usuario con persistencia dual (servidor + localStorage)
+export async function authenticateUser(username, password) {
+  try {
+    // Intentar autenticación con el nuevo sistema
+    const user = await authManager.login(username, password);
+    return user;
+  } catch (error) {
+    // Fallback al sistema anterior si falla
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const users = initUsers();
+        const user = users.find(u => 
+          u.username.toLowerCase() === username.toLowerCase() && 
+          u.password === password &&
+          u.active
+        );
+        
+        if (user) {
+          // Devolver usuario sin contraseña
+          const { password: _, ...userWithoutPassword } = user;
+          resolve(userWithoutPassword);
+        } else {
+          reject(new Error('Usuario o contraseña incorrectos'));
+        }
+      }, 300);
+    });
+  }
 }
 
 // Agregar nuevo usuario

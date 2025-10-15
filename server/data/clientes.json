@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "nfcId": "NFC_001",
+    "nombre": "María García",
+    "email": "maria.garcia@email.com",
+    "telefono": "555-0101",
+    "puntos": 150,
+    "nivel": "Bronce",
+    "fechaRegistro": "2025-10-15T16:43:30.594Z",
+    "ultimaVisita": "2025-10-15T16:43:30.594Z"
+  },
+  {
+    "id": 2,
+    "nfcId": "NFC_002",
+    "nombre": "Carlos López",
+    "email": "carlos.lopez@email.com",
+    "telefono": "555-0102",
+    "puntos": 325,
+    "nivel": "Plata",
+    "fechaRegistro": "2025-09-15T16:43:30.594Z",
+    "ultimaVisita": "2025-10-15T16:43:30.594Z"
+  }
+]
