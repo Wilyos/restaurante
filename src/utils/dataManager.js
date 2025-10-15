@@ -3,7 +3,8 @@
  * como online (servidor HTTP)
  */
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Obtener URL base del API desde variables de entorno
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
 
 // Detectar si el servidor está disponible
 let serverAvailable = false;

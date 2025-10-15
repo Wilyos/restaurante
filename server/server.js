@@ -11,8 +11,21 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Configuración de CORS para producción
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://restaurante-ivory.vercel.app',
+    'https://*.vercel.app' // Permite subdominios de Vercel
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rutas de datos
@@ -431,8 +444,9 @@ const startServer = async () => {
   try {
     await initializeFiles();
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor mock iniciado en http://localhost:${PORT}`);
+      console.log(`🌐 Accesible desde red local en http://[TU-IP]:${PORT}`);
       console.log(`📊 API endpoints disponibles:`);
       console.log(`   GET  /api/health - Health check`);
       console.log(`   POST /api/auth/login - Autenticación`);
@@ -440,7 +454,7 @@ const startServer = async () => {
       console.log(`   GET  /api/clientes - Clientes NFC`);
       console.log(`   GET  /api/transacciones - Transacciones`);
       console.log(`   GET  /api/configuracion - Configuración`);
-      console.log(`   GET  /api/estadisticas - Estadísticas`);
+      console.log(`   GET  /api/estadísticas - Estadísticas`);
       console.log(`   POST /api/reset - Reset datos (desarrollo)`);
       console.log(`📁 Datos persistentes en: ${DATA_DIR}`);
     });
