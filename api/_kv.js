@@ -4,11 +4,16 @@ import { kv } from '@vercel/kv';
 // Fallback en memoria para desarrollo local
 let memoryStore = {};
 
-// Detectar si estamos en Vercel (producción) o local (desarrollo)
-const isProduction = process.env.VERCEL_ENV === 'production';
-const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+// Detectar si KV está disponible (tanto en producción como desarrollo con variables)
+const hasKVCredentials = !!(process.env.KV_URL || process.env.KV_REST_API_URL);
+const isVercel = process.env.VERCEL || process.env.VERCEL_ENV || hasKVCredentials;
 
-console.log('🔧 KV Adapter initialized:', { isProduction, isVercel });
+console.log('🔧 KV Adapter initialized:', { 
+  hasKVCredentials, 
+  isVercel, 
+  kvUrl: !!process.env.KV_URL,
+  kvRestUrl: !!process.env.KV_REST_API_URL
+});
 
 // Funciones del adaptador KV
 export const kvGet = async (key) => {
