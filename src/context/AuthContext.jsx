@@ -47,7 +47,19 @@ export function AuthProvider({ children }) {
     
     try {
       const authenticatedUser = await authenticateUser(username, password);
+      console.log('🔐 Usuario autenticado:', authenticatedUser);
+      
       setUser(authenticatedUser);
+      
+      // Setear el rol desde los datos del usuario
+      if (authenticatedUser && authenticatedUser.user) {
+        setRol(authenticatedUser.user.role || 'mesero');
+        console.log('👤 Rol establecido:', authenticatedUser.user.role);
+      } else if (authenticatedUser && authenticatedUser.role) {
+        setRol(authenticatedUser.role || 'mesero');
+        console.log('👤 Rol establecido:', authenticatedUser.role);
+      }
+      
       return authenticatedUser;
     } catch (err) {
       setError(err.message);
@@ -59,8 +71,10 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setUser(null);
+    setRol(''); // Reset rol
     setError('');
     setShowInactivityWarning(false);
+    console.log('👋 Logout completado, rol reseteado');
   };
 
   // Manejar timeout por inactividad
