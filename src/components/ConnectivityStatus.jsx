@@ -28,7 +28,7 @@ import {
   Info as InfoIcon
 } from '@mui/icons-material';
 import { 
-  getConnectivityStatus, 
+  getDetailedConnectivityStatus, 
   forceServerCheck, 
   syncAllData 
 } from '../utils/dataManager';
@@ -40,7 +40,7 @@ export default function ConnectivityStatus() {
   const [lastSync, setLastSync] = useState(null);
 
   const checkStatus = async () => {
-    const currentStatus = getConnectivityStatus();
+    const currentStatus = getDetailedConnectivityStatus();
     setStatus(currentStatus);
     return currentStatus;
   };
@@ -51,7 +51,7 @@ export default function ConnectivityStatus() {
       await forceServerCheck();
       await checkStatus();
       
-      const newStatus = getConnectivityStatus();
+      const newStatus = getDetailedConnectivityStatus();
       if (newStatus.serverAvailable) {
         const syncSuccess = await syncAllData();
         if (syncSuccess) {

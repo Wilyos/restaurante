@@ -1,26 +1,38 @@
 /**
  * Adaptador de API que puede funcionar tanto en modo offline (localStorage) 
- * como online (servidor HTTP)
+ * como online (servidor HTTP) con Mock KV como fallback
  */
+import mockKV from './mockKV.js';
 
 // Obtener URL base del API desde variables de entorno
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || window.location.origin}/api`;
 
 // Detectar si el servidor está disponible
 let serverAvailable = false;
+let usingMockKV = false;
 
 const checkServerAvailability = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
-      timeout: 3000 // 3 segundos timeout
+      headers: { 'Content-Type': 'application/json' }
     });
-    serverAvailable = response.ok;
-    return serverAvailable;
+    
+    if (response.ok) {
+      serverAvailable = true;
+      usingMockKV = false;
+      console.log('✅ Server API available');
+      return true;
+    }
   } catch (error) {
-    serverAvailable = false;
-    return false;
+    console.log('⚠️ Server API unavailable, using Mock KV');
   }
+  
+  // Fallback a Mock KV
+  serverAvailable = false;
+  usingMockKV = true;
+  await mockKV.initializeData();
+  return false;
 };
 
 // Inicializar estado del servidor
@@ -62,21 +74,29 @@ export class DataManager {
    * Obtener datos - prioriza servidor, fallback a localStorage
    */
   async getData() {
+    await checkServerAvailability();
+    
     try {
-      if (serverAvailable) {
+      if (serverAvailable && !usingMockKV) {
         const response = await fetch(`${API_BASE_URL}/${this.entityName}`);
         if (response.ok) {
-          const data = await response.json();
+          const result = await response.json();
+          const data = result.data || result;
           // Guardar en localStorage como backup
           this.saveToLocalStorage(data);
           return data;
         }
       }
     } catch (error) {
-      console.warn(`⚠️ Error obteniendo ${this.entityName} del servidor, usando localStorage`);
+      console.warn(`⚠️ Error obteniendo ${this.entityName} del servidor`);
     }
 
-    // Fallback a localStorage
+    if (usingMockKV) {
+      // Usar Mock KV con datos más ricos
+      return mockKV.getData(this.entityName) || [];
+    }
+
+    // Fallback final a localStorage
     return this.getFromLocalStorage();
   }
 
@@ -374,6 +394,50 @@ export const syncAllData = async () => {
   
   return successful === results.length;
 };
+
+/**
+ * Función especial para login que maneja MockKV
+ */
+export const authenticateUser = async (username, password) => {
+  await checkServerAvailability();
+  
+  if (serverAvailable && !usingMockKV) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        return result.data || result;
+      }
+    } catch (error) {
+      console.warn('⚠️ Error en login del servidor, usando MockKV');
+    }
+  }
+  
+  // Usar MockKV para login
+  if (usingMockKV) {
+    return await mockKV.login(username, password);
+  }
+  
+  throw new Error('Authentication failed');
+};
+
+/**
+ * Función para obtener estado de conectividad con más detalle
+ */
+export const getDetailedConnectivityStatus = () => ({
+  serverAvailable,
+  usingMockKV,
+  mode: usingMockKV ? 'Mock KV' : (serverAvailable ? 'Servidor Remoto' : 'Solo Local'),
+  description: usingMockKV ? 
+    'Usando simulación de base de datos con datos enriquecidos' :
+    (serverAvailable ? 'Conectado al servidor con persistencia real' : 'Datos guardados solo localmente'),
+  lastCheck: new Date().toISOString()
+});
 
 // Auto-sincronizar al cargar
 document.addEventListener('DOMContentLoaded', () => {

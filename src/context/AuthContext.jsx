@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { authenticateUser } from '../api/mockUsers';
+import { authenticateUser } from '../utils/dataManager';
 import { useInactivityWithWarning } from '../hooks/useInactivityTimer';
 import InactivityWarningDialog from '../components/InactivityWarningDialog';
 
